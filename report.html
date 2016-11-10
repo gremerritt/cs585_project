@@ -21,5 +21,109 @@
 	<br>-- Jinyuan Zhao
    <!-- The <p> tag denotes a new paragraph -->
 
+<hr>
+<h2> Problem Definition </h2>
+<p>
+Given an image of size n&#215;m in pixels, resize the image into an image of size n'&#215;m' while preserving the visual coherence.
+</p>
+
+<hr>
+<h2> Algorithm </h2>
+<p>
+In this project, we are going to use the seam carving algorithm for content-aware image resizing proposed by Avidan et al. .
+</p><p>
+<b>1. Definition of a seam</b>
+</p><p>
+For an n&#215;m image, a vertical seam is defined as a series of connected pixels, one in each row:<br>
+<center><img src="vertical_seam.png" height="25"></center><br>
+Similarly, a horizontal seam is defined as:
+<center><img src="horizontal_seam.png" height="25"></center><br>
+An example of a horizontal seam and a vertical seam is shown below:<br>
+<center><img src="example_seam.png" height="250"></center><br>
+</p><p>
+<b>2. Finding the seam with minimum energy</b>
+</p><p>
+There are many ways to define the energy of pixels in an image. One way is to use the l<sub>1</sub>-norm of the gradient:<br>
+<center><img src="energy.png" height="45"></center><br>
+The energy of a seam is defined as the sum of the energy of all pixels that belong to the seam. To shrink the size of the image, we need to 
+remove the horizontal or vertical seam with the smallest energy. The optimal seam can be found with dynamic programming. Define M(i, j)
+as the minimum energy of all horizontal (or vertical) seams that end at pixel (i, j). Then
+</p><p>
+<center>M(i, j)=e<sub>1</sub>(i, j)+min{M(i-1, j-1),M(i-1, j),M(i-1, j+1)}(horizontal)</center>
+<center>or M(i, j)=e<sub>1</sub>(i, j)+min{M(i-1, j-1),M(i, j-1),M(i+1, j-1)}(vertical).</center>
+</p><p>
+The minimum value of the last column (or row) is the minimum energy of all the horizontal (or vertical) seams. We can then backtrack
+from the minimum entry to find the optimal seam.
+</p><p>
+<b>3. Image shrinking</b>
+</p><p>
+If n'&#60;n and m'&#60;m, we need to remove n-n' vertical seams and m-m' horizontal seams. There are four ways of choosing the order of removing:
+</p><p>
+(1) Remove horizontal seams first, and then remove vertical seams.<br>
+(2) Remove vertical seams first, and then remove horizontal seams.<br>
+(3) Remove horizontal and vertical seams in alternating order.<br>
+(4) Find the optimal order of removing using dynamic programming.<br>
+</p><p>
+<b>4. Image enlarging</b>
+</p><p>
+If n'&#62;n or m'&#62;m, we need to insert n-n' vertical seams or m-m' horizontal seams. However, we cannot do this by simply finding
+ the seam with minimum energy and duplicating it for n-n' (or m-m') times, because this will duplicate the same seam over and over again and 
+produce artifacts. Therefore, we should find n-n' (or m-m') seams whose energies are the smallest, and duplicate these seams.
+</p>
+
+<hr>
+<h2> Input images and desired results </h2>
+<p>
+Example 1: Shrinking the image in both dimensions
+<center>
+<table>
+<tr><td colspan=2></td></tr>
+
+<tr>
+  <td>Input image</td> 
+  <td><center><img src="input1.png" width="400"></center></td> 
+</tr> 
+
+<tr>
+  <td>Resizing by cropping</td> 
+  <td><center><img src="input1_cropped.png" width="200"></center></td> 
+</tr>
+
+<tr>
+  <td>Desired output of content-aware resizing</td> 
+  <td><center><img src="input1_desired.png" width="200"></center></td> 
+</tr> 
+</table>
+</center>
+</p><p>
+Example 2: Enlarging the image in one dimension and shrinking in the other dimension
+<center>
+<table>
+<tr><td colspan=2></td></tr>
+
+<tr>
+  <td>Input image</td> 
+  <td><center><img src="input2_scaled.png" width="280" height="200"></center></td> 
+</tr> 
+
+<tr>
+  <td>Resizing by scaling</td> 
+  <td><center><img src="input2_scaled.png" width="400"></center></td> 
+</tr>
+
+<tr>
+  <td>Desired output of content-aware resizing</td> 
+  <td><center><img src="input2_desired.png" width="400"></center></td> 
+</tr> 
+</table>
+</center>
+
+</p>
+
+<hr>
+<h2> References </h2>
+[1] Avidan, Shai, and Ariel Shamir. "Seam carving for content-aware image resizing." ACM Transactions on graphics (TOG). Vol. 26. No. 3. ACM, 2007.
+	   
+	   
 </body>
 </html>

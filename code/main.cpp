@@ -16,60 +16,121 @@
 using namespace cv;
 using namespace std;
 
-void process(Mat &src);
+void process(Mat &src,int outWidth,int outHeight);
 void getEnergy(Mat &src, Mat &energy);
 void getSeams(Mat &src, Mat &energy, vector<vector<Point> > &seams);
 void getSeamMap(Mat &src, Mat &energy, Mat &seam_map, char direction);
 void getSeamFromMap(Mat &seam_map, vector<Point> &seam, char direction);
 int getMinVal(vector<int> &vals);
 int getMinIndex(vector<int> &vals);
-int main()
+int main(int argc,char* argv[])
 {
-    Mat img = imread(IMAGE_NAME, IMREAD_COLOR);
-    resize(img, img, Size(1000,520));
+    if (argc != 5){
+        cout << "Usage: " << argv[0] << " [inputImage] [outputImage] [desiredWidth] [desiredHeight]" << endl;
+        return 0;
+    }
+
+
+    //Mat img = imread(IMAGE_NAME, IMREAD_COLOR);
+    Mat img = imread(argv[1], IMREAD_COLOR);
+    //resize(img, img, Size(1000,520));
     // resize(img, img, Size(20,10));
+    namedWindow("Finished Image", CV_WINDOW_AUTOSIZE);
     namedWindow("Image", CV_WINDOW_AUTOSIZE);
     namedWindow("TMP", CV_WINDOW_AUTOSIZE);
     namedWindow("energy", CV_WINDOW_AUTOSIZE);
-    process(img);
-    imshow("Image", img);
+    imshow("Image",img);
+    process(img,stoi(argv[3]),stoi(argv[4]));
+    imshow("Finished Image", img);
     waitKey(0);
     return 0;
 }
 
-void process(Mat &src) {
+void process(Mat &src,int outWidth,int outHeight) {
   Mat src_bw, energy;
   cvtColor(src, src_bw, CV_BGR2GRAY);
+  int rows = src_bw.rows;
+  int cols = src_bw.cols;
 
-  for(int i = 0; i < 300; i++) {
-    int rows = src_bw.rows;
-    int cols = src_bw.cols;
+  // iterate until we get to the desired size
+  Mat tmp_src_bw_shrink;
+  int direction;
+  int skewDim;
+  int idx = 0;
+  while (rows!=outHeight && cols != outWidth){
+    //cout << idx++ << "Rows: " << rows << " Cols:" << cols << endl;
+  
+    // decide which dimension to skew, and in which direction
+    // right now, just brute force, which is larger
+    if (abs(rows-outHeight) > abs(cols-outWidth)){
+        // skew in y
+        if (rows > outHeight){
+            // shrink
+            direction = -1;
+        } else {
+            // grow
+            direction = 1;
+        }
+        tmp_src_bw_shrink = Mat::zeros(rows+direction, cols, CV_8UC1);
+        skewDim = 0;
+    } else {
+        // skew in x
+        if (cols > outWidth){
+            // shrink
+            direction = -1;
+        } else {
+            // grow
+            direction = 1;
+        }
+        tmp_src_bw_shrink = Mat::zeros(rows, cols +direction, CV_8UC1);
+        skewDim = 1;
+    }
     Mat blurred, energy;
     vector<vector<Point> > seams;
     // GaussianBlur(src_bw, blurred, Size(17, 17), 0, 0);
-    Mat tmp_src_bw_shrink = Mat::zeros(rows, cols - 1, CV_8UC1);
 
     getEnergy(src_bw, energy);
     getSeams(src_bw, energy, seams);
     // for(int i = 0; i < seams.size(); i++) {
-    vector<Point> seam = seams[0];
+    // Draw the seams (0 is rows, 1 is cols)
+    vector<Point> seam = seams[1-skewDim];
     for(int j = 0; j < seam.size(); j++) {
       src_bw.at<uchar>(seam[j].x, seam[j].y) = 0;
     }
     // }
-    imshow("TMP", src_bw);
-    waitKey(0);
+    //imshow("TMP", src_bw);
+    //waitKey(0);
 
-    for(int i = 0; i < rows; i++) {
-      bool shift = false;
-      for(int j = 0; j < cols; j++) {
-        if (seams[0][i].y == j) shift = true;
-        else if (!shift) tmp_src_bw_shrink.at<uchar>(i,j) = src_bw.at<uchar>(i,j);
-        else tmp_src_bw_shrink.at<uchar>(i,j-1) = src_bw.at<uchar>(i,j);
+    // shrink col
+    if (skewDim){
+
+        for(int i = 0; i < rows; i++) {
+          bool shift = false;
+          for(int j = 0; j < cols; j++) {
+            // horizontal
+            if (seams[0][i].y == j) shift = true;
+            else if (!shift) tmp_src_bw_shrink.at<uchar>(i,j) = src_bw.at<uchar>(i,j);
+            else tmp_src_bw_shrink.at<uchar>(i,j+direction) = src_bw.at<uchar>(i,j);
+          }
+        }
+    }
+    // shrink row
+    else{
+        for(int j = 0; j < cols; j++) {
+          bool shift = false;
+          for(int i = 0; i < rows; i++) {
+            if (seams[1][j].x == i) shift = true;
+            else if (!shift) tmp_src_bw_shrink.at<uchar>(i,j) = src_bw.at<uchar>(i,j);
+            else tmp_src_bw_shrink.at<uchar>(i+direction,j) = src_bw.at<uchar>(i,j);
+        }
       }
     }
     src_bw = tmp_src_bw_shrink;
+    rows = src_bw.rows;
+    cols = src_bw.cols;
+ 
   }
+  src = src_bw;
 
   //
   // Vec3b red = Vec3b(0,0,255);

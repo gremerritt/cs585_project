@@ -9,3 +9,14 @@ The structure is currently set up to run on OSX with OpenCV installed with Homeb
     $ ./main
 
 It should be fairly straightforward to copy this code over to run with VisualStudio.
+
+Update: 11/30
+Added in functionality to shrink/grow both x and y to the input desired size. It doesn't do any resizing at all which I think would be the next level. New usage
+Also it only works on grayscale, so we'd need to adjust it to work on rbg next
+
+Usage:
+$ ./main [inputImage] [outputImage] [outputWidth] [outputHeight]
+
+outputImage doesn't do anything yet, but I imagine we would want to do that eventually. 
+
+

@@ -194,12 +194,11 @@ void EnlargeImage(Mat &src, Mat &output, double scale, char direction) {
 		for(int i = 0; i < src_bw.cols; i++){
 			int index = 0;
 			for(int j = 0; j < src_bw.rows; j++) {
-				for(int k = 0; k < copy_times.at<int>(i, j); k++){
-					output.at<Vec3b>(j + index, i) = src.at<Vec3b>(j, i);
+				for(int k = 0; k < copy_times.at<int>(j, i); k++){
 					if(k >= 1) index++;
+					output.at<Vec3b>(j + index, i) = src.at<Vec3b>(j, i);
 				}
 			}
-			printf("*%d*\n",i+1);
 		}
 	}
 	imshow("Final output", output);

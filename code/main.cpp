@@ -16,34 +16,217 @@
 using namespace cv;
 using namespace std;
 
+void ContentAwareResizing(Mat &src, Mat &output, int outWidth, int outHeight);
+void ShrinkImage(Mat &src, Mat &output, double scale, char direction);
+void EnlargeImage(Mat &src, Mat &output, double scale, char direction);
 void process(Mat &src,int outWidth,int outHeight);
 void getEnergy(Mat &src, Mat &energy);
 void getSeams(Mat &src, Mat &energy, vector<vector<Point> > &seams);
 void getSeamMap(Mat &src, Mat &energy, Mat &seam_map, char direction);
 void getSeamFromMap(Mat &seam_map, vector<Point> &seam, char direction);
+void getSeamFromMap2(Mat &seam_map, vector<vector<Point>> &seams, char direction, int num_seams);
 int getMinVal(vector<int> &vals);
 int getMinIndex(vector<int> &vals);
 int main(int argc,char* argv[])
 {
-    if (argc != 5){
-        cout << "Usage: " << argv[0] << " [inputImage] [outputImage] [desiredWidth] [desiredHeight]" << endl;
-        return 0;
-    }
+	if (argc != 5){
+		cout << "Usage: " << argv[0] << " [inputImage] [outputImage] [desiredWidth] [desiredHeight]" << endl;
+		return 0;
+	}
+	
+	//Mat img = imread(IMAGE_NAME, IMREAD_COLOR);
+	Mat img = imread(argv[1], IMREAD_COLOR);
+	//resize(img, img, Size(1000,520));
+	// resize(img, img, Size(20,10));
+	namedWindow("Finished Image", CV_WINDOW_AUTOSIZE);
+	namedWindow("Image", CV_WINDOW_AUTOSIZE);
+	namedWindow("TMP", CV_WINDOW_AUTOSIZE);
+	//namedWindow("energy", CV_WINDOW_AUTOSIZE);
+	imshow("Image",img);
 
+	Mat output;
+	//process(img,stoi(argv[3]),stoi(argv[4]));
+	ContentAwareResizing(img, output, stoi(argv[3]), stoi(argv[4]));
+	imshow("Finished Image", output);
+	imwrite(argv[2], output);
+	waitKey(0);
+	return 0;
+}
 
-    //Mat img = imread(IMAGE_NAME, IMREAD_COLOR);
-    Mat img = imread(argv[1], IMREAD_COLOR);
-    //resize(img, img, Size(1000,520));
-    // resize(img, img, Size(20,10));
-    namedWindow("Finished Image", CV_WINDOW_AUTOSIZE);
-    namedWindow("Image", CV_WINDOW_AUTOSIZE);
-    namedWindow("TMP", CV_WINDOW_AUTOSIZE);
-    namedWindow("energy", CV_WINDOW_AUTOSIZE);
-    imshow("Image",img);
-    process(img,stoi(argv[3]),stoi(argv[4]));
-    imshow("Finished Image", img);
-    waitKey(0);
-    return 0;
+void ContentAwareResizing(Mat &src, Mat &output, int outWidth, int outHeight) {
+	int rows = src.rows;
+	int cols = src.cols;
+	double x_scale = (double)outHeight / (double)rows;
+	double y_scale = (double)outWidth / (double)cols;
+	Mat tmp;
+
+	if(x_scale > 1) EnlargeImage(src, tmp, x_scale, 1);
+	else ShrinkImage(src, tmp, x_scale, 1);
+
+	if(y_scale > 1) EnlargeImage(tmp, output, y_scale, 0);
+	else ShrinkImage(tmp, output, y_scale, 0);
+}
+
+void ShrinkImage(Mat &src, Mat &output, double scale, char direction) {
+	if (scale <= 0 || scale > 1){
+		std::cout << "Scale must range between 0 and 1." << endl;
+		return;
+	}
+
+	Mat src_bw, energy;
+	cvtColor(src, src_bw, CV_BGR2GRAY);
+	output = src.clone();
+	vector<Point> seam;
+	
+	int num_seams;
+	if(direction == 0){
+		num_seams = (int)((double)src_bw.cols * (1 - scale));
+		seam = vector<Point>(src_bw.rows, Point(0,0));
+	}
+	else {
+		num_seams = (int)((double)src_bw.rows * (1 - scale));
+		seam = vector<Point>(src_bw.cols, Point(0,0));
+	}
+	
+	for(int i = 0; i < num_seams; i++) {	
+		int rows = src_bw.rows;
+		int cols = src_bw.cols;
+		Mat blurred, energy;
+		// GaussianBlur(src_bw, blurred, Size(17, 17), 0, 0);
+		Mat tmp_src_bw_shrink;
+		Mat tmp_output_shrink; 
+		if (direction == 0){
+			tmp_src_bw_shrink = Mat::zeros(rows, cols - 1, CV_8UC1);
+			tmp_output_shrink = Mat::zeros(rows, cols - 1, CV_8UC3);
+		}
+		else {
+			tmp_src_bw_shrink = Mat::zeros(rows - 1, cols, CV_8UC1);
+			tmp_output_shrink = Mat::zeros(rows - 1, cols, CV_8UC3);
+		}
+		Mat seam_map(src_bw.rows, src_bw.cols, DataType<int>::type);
+
+		getEnergy(src_bw, energy);
+		getSeamMap(src_bw, energy, seam_map, direction);
+		getSeamFromMap(seam_map, seam, direction);
+
+		for(int j = 0; j < seam.size(); j++) {
+			output.at<Vec3b>(seam[j].x, seam[j].y) = Vec3b(0, 0, 255);
+		}
+
+		imshow("TMP", output);
+		cv::waitKey(1);
+
+		if (direction == 0){
+			for(int k = 0; k < rows; k++) {
+				bool shift = false;
+				for(int j = 0; j < cols; j++) {
+					if (seam[k].y == j) shift = true;
+					else if (!shift) {
+						tmp_src_bw_shrink.at<uchar>(k,j) = src_bw.at<uchar>(k,j);
+						tmp_output_shrink.at<Vec3b>(k,j) = output.at<Vec3b>(k,j);
+					}
+					else {
+						tmp_src_bw_shrink.at<uchar>(k,j-1) = src_bw.at<uchar>(k,j);
+						tmp_output_shrink.at<Vec3b>(k,j-1) = output.at<Vec3b>(k,j);
+					}
+				}			
+			}
+			std::printf("Deleting vertical seams: %d/%d\n", i + 1, num_seams);
+		}
+		else {
+			for(int j = 0; j < cols; j++) {
+				bool shift = false;
+				for(int k = 0; k < rows; k++) {
+					if (seam[j].x == k) shift = true;
+					else if (!shift) {
+						tmp_src_bw_shrink.at<uchar>(k,j) = src_bw.at<uchar>(k,j);
+						tmp_output_shrink.at<Vec3b>(k,j) = output.at<Vec3b>(k,j);
+					}
+					else {
+						tmp_src_bw_shrink.at<uchar>(k-1,j) = src_bw.at<uchar>(k,j);
+						tmp_output_shrink.at<Vec3b>(k-1,j) = output.at<Vec3b>(k,j);
+					}
+				}			
+			}
+			std::printf("Deleting horizontal seams: %d/%d\n", i + 1, num_seams);
+		}
+		src_bw = tmp_src_bw_shrink;
+		output = tmp_output_shrink;		
+	}
+}
+
+void EnlargeImage(Mat &src, Mat &output, double scale, char direction) {
+	if (scale <= 1){
+		std::cout << "Scale must be larger than 1." << endl;
+		return;
+	}
+
+	if (scale > 1.4){
+		Mat tmp;
+		EnlargeImage(src, tmp, 1.4, direction);
+		double scale2 = scale / 1.4;
+		EnlargeImage(tmp, output, scale2, direction);
+		return;
+	}
+
+	Mat src_bw, energy;
+	cvtColor(src, src_bw, CV_BGR2GRAY);
+	vector<vector<Point>> seams;
+	
+	int num_seams;
+	if(direction == 0){
+		num_seams = (int)((double)src_bw.cols * (scale - 1));
+	}
+	else {
+		num_seams = (int)((double)src_bw.rows * (scale - 1));
+	}
+
+	Mat seam_map(src_bw.rows, src_bw.cols, DataType<int>::type);
+	getEnergy(src_bw, energy);
+	getSeamMap(src_bw, energy, seam_map, direction);
+	getSeamFromMap2(seam_map, seams, direction, num_seams);
+
+	Mat copy_times(src_bw.rows, src_bw.cols, DataType<int>::type);
+	for(int i = 0; i < src_bw.rows; i++) {
+		for(int j = 0; j < src_bw.cols; j++) {
+			copy_times.at<int>(i, j) = 1;
+		}
+	}
+	Mat src2 = src.clone();
+	for(int i = 0; i < seams.size(); i++) {
+		for(int j = 0; j < seams[i].size(); j++) {
+			int x = seams[i][j].x;
+			int y = seams[i][j].y;
+			copy_times.at<int>(x, y) = copy_times.at<int>(x, y) + 1;
+			src2.at<Vec3b>(x,y) = Vec3b(0, 0, 255);
+		}
+	}
+	imshow("TMP", src2);
+
+	if(direction == 0){
+		output = Mat(src_bw.rows, src_bw.cols + num_seams, CV_8UC3);
+		for(int i = 0; i < src_bw.rows; i++){
+			int index = 0;
+			for(int j = 0; j < src_bw.cols; j++) {
+				for(int k = 0; k < copy_times.at<int>(i, j); k++){
+					if(k >= 1) index++;
+					output.at<Vec3b>(i, j + index) = src.at<Vec3b>(i, j);					
+				}
+			}
+		}
+	}
+	else {
+		output = Mat(src_bw.rows + num_seams, src_bw.cols, CV_8UC3);
+		for(int i = 0; i < src_bw.cols; i++){
+			int index = 0;
+			for(int j = 0; j < src_bw.rows; j++) {
+				for(int k = 0; k < copy_times.at<int>(j, i); k++){
+					if(k >= 1) index++;
+					output.at<Vec3b>(j + index, i) = src.at<Vec3b>(j, i);	
+				}
+			}
+		}
+	}
 }
 
 void process(Mat &src,int outWidth,int outHeight) {
@@ -298,6 +481,105 @@ void getSeamFromMap(Mat &seam_map, vector<Point> &seam, char direction) {
   }
 }
 
+void getSeamFromMap2(Mat &seam_map, vector<vector<Point>> &seams, char direction, int num_seams) {
+	unsigned int rows = seam_map.rows;
+	unsigned int cols = seam_map.cols;
+	vector<int> vals(3, 0);
+	vector<bool> flags;
+	Mat seam_pos(seam_map.rows, seam_map.cols, DataType<bool>::type);
+	for(int i = 0; i < rows; i++) {
+		for(int j = 0; j < cols; j++) {
+			seam_pos.at<bool>(i, j) = 0;
+		}
+	}
+
+	// get the vertical seams
+	if (direction == 0) {
+		flags = vector<bool>(cols, 0);
+		vector<Point> seam(rows, Point(0,0));
+		for(int i = 0; i < num_seams; i++) {
+			int min = INT_MAX;
+			int min_index_vert;
+			for(int j = 0; j < cols; j++) {
+				if (seam_map.at<int>(rows - 1, j) < min && flags[j] == 0) {
+					min = seam_map.at<int>(rows - 1, j);
+					min_index_vert = j;
+				}
+			}
+			//printf("*%d*\n",i+1);
+			flags[min_index_vert] = 1;
+		}
+
+		int num_seam = 0;
+		for(int ind = 0; ind < cols; ind++){
+			if(flags[ind] == 1){
+				num_seam++;
+				std::printf("Getting vertical seam: %d/%d\n", num_seam, num_seams);
+				for(int i = rows - 1; i >= 0; i--) {
+					if (i == rows - 1) {
+						seam[i].x = i;
+						seam[i].y = ind;
+						seam_pos.at<bool>(i, ind) = 1;
+					}
+					else {
+						int last_index = seam[i+1].y;
+						vals[0] = (last_index > 0 && seam_pos.at<bool>(i, last_index-1) == 0) ? seam_map.at<int>(i, last_index-1) : INT_MAX;
+						vals[1] = (seam_pos.at<bool>(i, last_index) == 0) ? seam_map.at<int>(i, last_index) : INT_MAX;
+						vals[2] = (last_index < cols-1 && seam_pos.at<bool>(i, last_index+1) == 0) ? seam_map.at<int>(i, last_index+1) : INT_MAX;
+						int relative_index = getMinIndex(vals);
+						seam[i].x = i;
+						seam[i].y = last_index + relative_index - 1;
+						seam_pos.at<bool>(i, last_index + relative_index - 1) = 1;
+					}
+				}
+				seams.push_back(seam);
+			}
+		}
+	}
+	else if (direction == 1) {
+		// get the horizontal seams
+		flags = vector<bool>(rows, 0);
+		vector<Point> seam(cols, Point(0,0));
+		for(int i = 0; i < num_seams; i++) {
+			int min = INT_MAX;
+			int min_index_horz;
+			for(int j = 0; j < rows; j++) {
+				if (seam_map.at<int>(j, cols - 1) < min && flags[j] == 0) {
+					min = seam_map.at<int>(j, cols - 1);
+					min_index_horz = j;
+				}
+			}
+			flags[min_index_horz] = 1;
+		}
+
+		int num_seam = 0;
+		for(int ind = 0; ind < rows; ind++){
+			if(flags[ind] == 1){
+				num_seam++;
+				std::printf("Getting horizontal seam: %d/%d\n", num_seam, num_seams);
+				for(int i = cols - 1; i >= 0; i--) {
+					if (i == cols - 1) {
+						seam[i].x = ind;
+						seam[i].y = i;
+						seam_pos.at<bool>(ind, i) = 1;
+					}
+					else {
+						int last_index = seam[i+1].x;
+						vals[0] = (last_index > 0 && seam_pos.at<bool>(last_index-1, i) == 0) ? seam_map.at<int>(last_index-1, i) : INT_MAX;
+						vals[1] = (seam_pos.at<bool>(last_index, i) == 0) ? seam_map.at<int>(last_index, i) : INT_MAX;
+						vals[2] = (last_index < rows-1 && seam_pos.at<bool>(last_index+1, i) == 0) ? seam_map.at<int>(last_index+1, i) : INT_MAX;
+						int relative_index = getMinIndex(vals);
+						seam[i].x = last_index + relative_index - 1;
+						seam[i].y = i;
+						seam_pos.at<bool>(last_index + relative_index - 1, i) = 1;
+					}
+				}
+				seams.push_back(seam);
+			}
+		}
+	}
+}
+
 int getMinVal(vector<int> &vals) {
   int m1 = min(vals[0], vals[1]);
   int m2 = min(m1, vals[2]);
@@ -306,7 +588,7 @@ int getMinVal(vector<int> &vals) {
 
 int getMinIndex(vector<int> &vals) {
   int min = INT_MAX;
-  int min_index;
+  int min_index = 1;
   for(int i = 0; i < 3; i++) {
     if (vals[i] < min) {
       min = vals[i];

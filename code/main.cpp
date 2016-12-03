@@ -24,7 +24,7 @@ void getEnergy(Mat &src, Mat &energy);
 void getSeams(Mat &src, Mat &energy, vector<vector<Point> > &seams);
 void getSeamMap(Mat &src, Mat &energy, Mat &seam_map, char direction);
 void getSeamFromMap(Mat &seam_map, vector<Point> &seam, char direction);
-void getSeamFromMap2(Mat &seam_map, vector<vector<Point>> &seams, char direction, int num_seams);
+void getSeamFromMap2(Mat &seam_map, vector<vector<Point> > &seams, char direction, int num_seams);
 int getMinVal(vector<int> &vals);
 int getMinIndex(vector<int> &vals);
 int main(int argc,char* argv[])
@@ -33,7 +33,7 @@ int main(int argc,char* argv[])
 		cout << "Usage: " << argv[0] << " [inputImage] [outputImage] [desiredWidth] [desiredHeight]" << endl;
 		return 0;
 	}
-	
+
 	//Mat img = imread(IMAGE_NAME, IMREAD_COLOR);
 	Mat img = imread(argv[1], IMREAD_COLOR);
 	//resize(img, img, Size(1000,520));
@@ -77,7 +77,7 @@ void ShrinkImage(Mat &src, Mat &output, double scale, char direction) {
 	cvtColor(src, src_bw, CV_BGR2GRAY);
 	output = src.clone();
 	vector<Point> seam;
-	
+
 	int num_seams;
 	if(direction == 0){
 		num_seams = (int)((double)src_bw.cols * (1 - scale));
@@ -88,13 +88,13 @@ void ShrinkImage(Mat &src, Mat &output, double scale, char direction) {
 		seam = vector<Point>(src_bw.cols, Point(0,0));
 	}
 	
-	for(int i = 0; i < num_seams; i++) {	
+	for(int i = 0; i < num_seams; i++) {
 		int rows = src_bw.rows;
 		int cols = src_bw.cols;
 		Mat blurred, energy;
 		// GaussianBlur(src_bw, blurred, Size(17, 17), 0, 0);
 		Mat tmp_src_bw_shrink;
-		Mat tmp_output_shrink; 
+		Mat tmp_output_shrink;
 		if (direction == 0){
 			tmp_src_bw_shrink = Mat::zeros(rows, cols - 1, CV_8UC1);
 			tmp_output_shrink = Mat::zeros(rows, cols - 1, CV_8UC3);
@@ -129,7 +129,7 @@ void ShrinkImage(Mat &src, Mat &output, double scale, char direction) {
 						tmp_src_bw_shrink.at<uchar>(k,j-1) = src_bw.at<uchar>(k,j);
 						tmp_output_shrink.at<Vec3b>(k,j-1) = output.at<Vec3b>(k,j);
 					}
-				}			
+				}
 			}
 			std::printf("Deleting vertical seams: %d/%d\n", i + 1, num_seams);
 		}
@@ -146,12 +146,12 @@ void ShrinkImage(Mat &src, Mat &output, double scale, char direction) {
 						tmp_src_bw_shrink.at<uchar>(k-1,j) = src_bw.at<uchar>(k,j);
 						tmp_output_shrink.at<Vec3b>(k-1,j) = output.at<Vec3b>(k,j);
 					}
-				}			
+				}
 			}
 			std::printf("Deleting horizontal seams: %d/%d\n", i + 1, num_seams);
 		}
 		src_bw = tmp_src_bw_shrink;
-		output = tmp_output_shrink;		
+		output = tmp_output_shrink;
 	}
 }
 
@@ -171,8 +171,8 @@ void EnlargeImage(Mat &src, Mat &output, double scale, char direction) {
 
 	Mat src_bw, energy;
 	cvtColor(src, src_bw, CV_BGR2GRAY);
-	vector<vector<Point>> seams;
-	
+	vector<vector<Point> > seams;
+
 	int num_seams;
 	if(direction == 0){
 		num_seams = (int)((double)src_bw.cols * (scale - 1));
@@ -210,7 +210,7 @@ void EnlargeImage(Mat &src, Mat &output, double scale, char direction) {
 			for(int j = 0; j < src_bw.cols; j++) {
 				for(int k = 0; k < copy_times.at<int>(i, j); k++){
 					if(k >= 1) index++;
-					output.at<Vec3b>(i, j + index) = src.at<Vec3b>(i, j);					
+					output.at<Vec3b>(i, j + index) = src.at<Vec3b>(i, j);
 				}
 			}
 		}
@@ -222,7 +222,7 @@ void EnlargeImage(Mat &src, Mat &output, double scale, char direction) {
 			for(int j = 0; j < src_bw.rows; j++) {
 				for(int k = 0; k < copy_times.at<int>(j, i); k++){
 					if(k >= 1) index++;
-					output.at<Vec3b>(j + index, i) = src.at<Vec3b>(j, i);	
+					output.at<Vec3b>(j + index, i) = src.at<Vec3b>(j, i);
 				}
 			}
 		}
@@ -242,7 +242,7 @@ void process(Mat &src,int outWidth,int outHeight) {
   int idx = 0;
   while (rows!=outHeight && cols != outWidth){
     //cout << idx++ << "Rows: " << rows << " Cols:" << cols << endl;
-  
+
     // decide which dimension to skew, and in which direction
     // right now, just brute force, which is larger
     if (abs(rows-outHeight) > abs(cols-outWidth)){
@@ -311,7 +311,7 @@ void process(Mat &src,int outWidth,int outHeight) {
     src_bw = tmp_src_bw_shrink;
     rows = src_bw.rows;
     cols = src_bw.cols;
- 
+
   }
   src = src_bw;
 
@@ -481,7 +481,7 @@ void getSeamFromMap(Mat &seam_map, vector<Point> &seam, char direction) {
   }
 }
 
-void getSeamFromMap2(Mat &seam_map, vector<vector<Point>> &seams, char direction, int num_seams) {
+void getSeamFromMap2(Mat &seam_map, vector<vector<Point> > &seams, char direction, int num_seams) {
 	unsigned int rows = seam_map.rows;
 	unsigned int cols = seam_map.cols;
 	vector<int> vals(3, 0);

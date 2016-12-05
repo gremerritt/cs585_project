@@ -43,17 +43,17 @@ int main(int argc,char* argv[])
 	// resize(img, img, Size(20,10));
 	namedWindow("Finished Image", CV_WINDOW_AUTOSIZE);
 	namedWindow("Image", CV_WINDOW_AUTOSIZE);
-  namedWindow("Energy", CV_WINDOW_AUTOSIZE);
+	namedWindow("Energy", CV_WINDOW_AUTOSIZE);
 	namedWindow("TMP", CV_WINDOW_AUTOSIZE);
-  namedWindow("Crop", CV_WINDOW_AUTOSIZE);
+	namedWindow("Crop", CV_WINDOW_AUTOSIZE);
 	//namedWindow("energy", CV_WINDOW_AUTOSIZE);
 	imshow("Image",img);
 
 	Mat output;
 	//process(img,stoi(argv[3]),stoi(argv[4]));
 	// ContentAwareResizing(img, output, stoi(argv[3]), stoi(argv[4]));
-  resizeByHistogram(img, output, stoi(argv[3]), stoi(argv[4]));
-  imshow("Image",img);
+	resizeByHistogram(img, output, stoi(argv[3]), stoi(argv[4]));
+	imshow("Image",img);
 	imshow("Finished Image", output);
 	imwrite(argv[2], output);
 	waitKey(0);
@@ -62,7 +62,7 @@ int main(int argc,char* argv[])
 
 void resizeByHistogram(Mat &src, Mat &output, int outWidth, int outHeight) {
   int rows = src.rows;
-	int cols = src.cols;
+  int cols = src.cols;
   if (DEBUG) {
     cout << "Height: " << rows << endl;
     cout << "Width:  " << cols << endl;
@@ -156,7 +156,7 @@ Point getCenter(Mat &src, int buckets) {
   assert (buckets > 0);
 
   int rows = src.rows;
-	int cols = src.cols;
+  int cols = src.cols;
   int horz_bucket_size = cols / buckets;
   int vert_bucket_size = rows / buckets;
   int effectiveWidth   = horz_bucket_size * buckets;

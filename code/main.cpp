@@ -11,7 +11,8 @@
 #include <unistd.h>
 
 #define IMAGE_NAME "tree.jpg"
-#define DEBUG 0
+#define DEBUG 1
+#define RED Scalar(0,0,255)
 
 using namespace cv;
 using namespace std;
@@ -19,6 +20,8 @@ using namespace std;
 void ContentAwareResizing(Mat &src, Mat &output, int outWidth, int outHeight);
 void ShrinkImage(Mat &src, Mat &output, double scale, char direction);
 void EnlargeImage(Mat &src, Mat &output, double scale, char direction);
+void resizeByHistogram(Mat &src, Mat &output, int outWidth, int outHeight);
+Point getCenter(Mat &src, int buckets = 15);
 void process(Mat &src,int outWidth,int outHeight);
 void getEnergy(Mat &src, Mat &energy);
 void getSeams(Mat &src, Mat &energy, vector<vector<Point> > &seams);
@@ -40,17 +43,139 @@ int main(int argc,char* argv[])
 	// resize(img, img, Size(20,10));
 	namedWindow("Finished Image", CV_WINDOW_AUTOSIZE);
 	namedWindow("Image", CV_WINDOW_AUTOSIZE);
+  namedWindow("Energy", CV_WINDOW_AUTOSIZE);
 	namedWindow("TMP", CV_WINDOW_AUTOSIZE);
+  namedWindow("Crop", CV_WINDOW_AUTOSIZE);
 	//namedWindow("energy", CV_WINDOW_AUTOSIZE);
 	imshow("Image",img);
 
 	Mat output;
 	//process(img,stoi(argv[3]),stoi(argv[4]));
-	ContentAwareResizing(img, output, stoi(argv[3]), stoi(argv[4]));
+	// ContentAwareResizing(img, output, stoi(argv[3]), stoi(argv[4]));
+  resizeByHistogram(img, output, stoi(argv[3]), stoi(argv[4]));
+  imshow("Image",img);
 	imshow("Finished Image", output);
 	imwrite(argv[2], output);
 	waitKey(0);
 	return 0;
+}
+
+void resizeByHistogram(Mat &src, Mat &output, int outWidth, int outHeight) {
+  int rows = src.rows;
+	int cols = src.cols;
+  if (DEBUG) {
+    cout << "Height: " << rows << endl;
+    cout << "Width:  " << cols << endl;
+  }
+  Mat src_bw, energy;
+  Point upper_left, lower_right;
+  int dstWidth, dstHeight;
+  float srcAR = ((float)cols) / ((float)rows);
+  float dstAR = ((float)outWidth) / ((float)outHeight);
+  if (srcAR == dstAR) {
+    output = src.clone();
+    return;
+  }
+
+  cvtColor(src, src_bw, CV_BGR2GRAY);
+  getEnergy(src_bw, energy);
+  // imshow("Energy", energy);
+  Point center = getCenter(energy);
+  if (DEBUG) cout << "Center " << center << endl;
+
+  if (srcAR > dstAR) {
+    if (DEBUG) cout << "Shrinking horizontally" << endl;
+    // shrinking horizontally
+    dstWidth  = dstAR * rows;
+    dstHeight = rows;
+
+    // center frame horizontally at this point
+    int left_pixel = center.x - (dstWidth / 2);
+    int rght_pixel = center.x + (dstWidth / 2) - ((dstWidth % 2 == 0) ? 1 : 0);
+
+    // shift the frame if either sides are out of bounds
+    if (left_pixel < 0) {
+      rght_pixel -= left_pixel;
+      left_pixel = 0;
+    }
+    else if (rght_pixel >= cols) {
+      left_pixel -= rght_pixel - cols - 1;
+      rght_pixel = cols - 1;
+    }
+
+    upper_left = Point(left_pixel, 0);
+    lower_right = Point(rght_pixel, rows-1);
+  }
+  else {
+    if (DEBUG) cout << "Shrinking vertically" << endl;
+    // shrinking vertically
+    dstWidth  = cols;
+    dstHeight = cols / dstAR;
+
+    // center frame vertically at this point
+    int top_pixel = center.y - (dstHeight / 2);
+    int bot_pixel = center.y + (dstHeight / 2) - ((dstHeight % 2 == 0) ? 1 : 0);
+
+    // shift the frame if either sides are out of bounds
+    if (top_pixel < 0) {
+      bot_pixel -= top_pixel;
+      top_pixel = 0;
+    }
+    else if (bot_pixel >= rows) {
+      top_pixel -= bot_pixel - rows - 1;
+      bot_pixel = rows - 1;
+    }
+
+    upper_left = Point(0, top_pixel);
+    lower_right = Point(cols-1, bot_pixel);
+  }
+
+  if (DEBUG) {
+    cout << "Upper Left:  " << upper_left << endl;
+    cout << "Lower Right: " << lower_right << endl;
+  }
+
+  // crop the image with the calculated size
+  // this cropping method isn't inclusive of the lower right point, hence the shift
+  Rect roi(upper_left, Point(lower_right.x + 1, lower_right.y + 1));
+  output = src(roi).clone();
+  if (DEBUG) {
+    imshow("Crop", output);
+    cout << "New Height: " << output.rows << endl;
+    cout << "New Width:  " << output.cols << endl;
+    rectangle(src, upper_left, lower_right, RED);
+    circle(src, center, 1, RED, 4);
+  }
+
+  // now we have an image with the right aspect ratio
+  // so simple resize it
+  resize(output, output, Size(outWidth, outHeight));
+}
+
+Point getCenter(Mat &src, int buckets) {
+  assert (buckets > 0);
+
+  int rows = src.rows;
+	int cols = src.cols;
+  int horz_bucket_size = cols / buckets;
+  int vert_bucket_size = rows / buckets;
+  int effectiveWidth   = horz_bucket_size * buckets;
+  int effectiveHeight  = vert_bucket_size * buckets;
+  vector<int> horz_hist(buckets, 0);
+  vector<int> vert_hist(buckets, 0);
+
+  for(int i = 0; i < effectiveHeight; i++) {
+    for(int j = 0; j < effectiveWidth; j++) {
+      horz_hist[j / horz_bucket_size] += (int)(src.at<uchar>(i,j));
+      vert_hist[i / vert_bucket_size] += (int)(src.at<uchar>(i,j));
+    }
+  }
+
+  int horz_max = distance(horz_hist.begin(), max_element(horz_hist.begin(), horz_hist.end()));
+  int vert_max = distance(vert_hist.begin(), max_element(vert_hist.begin(), vert_hist.end()));
+  int horz_pixel = (horz_max * horz_bucket_size) + (horz_bucket_size / 2);
+  int vert_pixel = (vert_max * vert_bucket_size) + (vert_bucket_size / 2);
+  return Point(horz_pixel, vert_pixel);
 }
 
 void ContentAwareResizing(Mat &src, Mat &output, int outWidth, int outHeight) {
@@ -87,7 +212,7 @@ void ShrinkImage(Mat &src, Mat &output, double scale, char direction) {
 		num_seams = (int)((double)src_bw.rows * (1 - scale));
 		seam = vector<Point>(src_bw.cols, Point(0,0));
 	}
-	
+
 	for(int i = 0; i < num_seams; i++) {
 		int rows = src_bw.rows;
 		int cols = src_bw.cols;
@@ -344,18 +469,7 @@ void getEnergy(Mat &src, Mat &energy) {
 
   add(abs_grad_x, abs_grad_y, energy);
 
-  //
-  if (DEBUG) {
-    imshow("energy", energy);
-    cout << "\nenergy:\n";
-    for (int i = 0; i < src.rows; i++) {
-      cout << i << ((i<10) ? "  |  " : " |  ");
-      for (int j = 0; j < src.cols; j++) {
-        cout << (int)(energy.at<uchar>(i,j)) << " ";
-      }
-      cout << endl;
-    }
-  }
+  if (DEBUG) imshow("energy", energy);
 }
 
 void getSeams(Mat &src, Mat &energy, vector<vector<Point> > &seams) {
@@ -364,20 +478,7 @@ void getSeams(Mat &src, Mat &energy, vector<vector<Point> > &seams) {
   vector<Point> horz(src.cols, Point(0,0));
 
   getSeamMap(src, energy, seam_map, 0);
-  if (DEBUG) {
-    cout << "\nseam map:\n";
-    for (int i = 0; i < src.rows; i++) {
-      cout << i << ((i<10) ? "  |  " : " |  ");
-      for (int j = 0; j < src.cols; j++) {
-        cout << (int)(seam_map.at<int>(i,j)) << " ";
-      }
-      cout << endl;
-    }
-  }
   getSeamFromMap(seam_map, vert, 0);
-  if (DEBUG) {
-    for(int i = 0; i < src.rows; i++) cout << vert[i] << endl;
-  }
 
   getSeamMap(src, energy, seam_map, 1);
   getSeamFromMap(seam_map, horz, 1);

@@ -74,6 +74,7 @@ void resizeByHistogram(Mat &src, Mat &output, int outWidth, int outHeight) {
   float dstAR = ((float)outWidth) / ((float)outHeight);
 
   cvtColor(src, src_bw, CV_BGR2GRAY);
+  GaussianBlur(src_bw, src_bw, Size(17, 17), 0, 0);
   getEnergy(src_bw, energy);
   // imshow("Energy", energy);
   Point center = getCenter(energy);

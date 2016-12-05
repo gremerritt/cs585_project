@@ -72,10 +72,6 @@ void resizeByHistogram(Mat &src, Mat &output, int outWidth, int outHeight) {
   int dstWidth, dstHeight;
   float srcAR = ((float)cols) / ((float)rows);
   float dstAR = ((float)outWidth) / ((float)outHeight);
-  if (srcAR == dstAR) {
-    output = src.clone();
-    return;
-  }
 
   cvtColor(src, src_bw, CV_BGR2GRAY);
   getEnergy(src_bw, energy);
@@ -83,7 +79,11 @@ void resizeByHistogram(Mat &src, Mat &output, int outWidth, int outHeight) {
   Point center = getCenter(energy);
   if (DEBUG) cout << "Center " << center << endl;
 
-  if (srcAR > dstAR) {
+  if (srcAR == dstAR) {
+    upper_left = Point(0, 0);
+    lower_right = Point(cols-1, rows-1);
+  }
+  else if (srcAR > dstAR) {
     if (DEBUG) cout << "Shrinking horizontally" << endl;
     // shrinking horizontally
     dstWidth  = dstAR * rows;

@@ -3,6 +3,13 @@
 
 <head>
 
+<style>
+
+    table, th, td {
+        border : 1px solid black
+    }
+</style>
+
 
 <title>CS585 Project</title>
 <!-- The title tag sets the title bar of the web bar -->
@@ -57,18 +64,21 @@ from the minimum entry to find the optimal seam.
 </p><p>
 <b>3. Image shrinking</b>
 </p><p>
-If n'&#60;n and m'&#60;m, we need to remove n-n' vertical seams and m-m' horizontal seams. There are four ways of choosing the order of removing:
+If n'&#60;n and m'&#60;m, we need to remove n-n' vertical seams and m-m' horizontal seams. The vertical seams are removed first until the image gets to the desired size.
+
+<!-- There are four ways of choosing the order of removing:
 </p><p>
 (1) Remove horizontal seams first, and then remove vertical seams.<br>
 (2) Remove vertical seams first, and then remove horizontal seams.<br>
 (3) Remove horizontal and vertical seams in alternating order.<br>
 (4) Find the optimal order of removing using dynamic programming.<br>
+ //-->
 </p><p>
 <b>4. Image enlarging</b>
 </p><p>
 If n'&#62;n or m'&#62;m, we need to insert n-n' vertical seams or m-m' horizontal seams. However, we cannot do this by simply finding
  the seam with minimum energy and duplicating it for n-n' (or m-m') times, because this will duplicate the same seam over and over again and 
-produce artifacts. Therefore, we should find n-n' (or m-m') seams whose energies are the smallest, and duplicate these seams.
+produce artifacts. Therefore, we find n-n' (or m-m') seams whose energies are the smallest, and duplicate these seams.
 </p>
 
 <hr>
@@ -119,6 +129,58 @@ Example 2: Enlarging the image in one dimension and shrinking in the other dimen
 </center>
 
 </p>
+
+<hr>
+<h2> Results </h2>
+Several test images were ran through the tool using a fixed aspect ratio:
+<br>
+<table>
+    <tr><td><center>Input Image (512x512)</center></td><td><center>Shrunk Image (400x400)</center></td><td><center>Enlarged Image (600x600)</center></td></tr>
+<tr><td><center><img src="aoutput/cameraman.png" width="50%"></center></td>
+    <td><center><img src="aoutput/cameraman-out4.png" width="50%"></center></td>
+    <td><center><img src="aoutput/cameraman-out5.png" width="50%"></center></td>
+</tr>
+<tr><td><center><img src="aoutput/house.png" width="50%"></center></td>
+    <td><center><img src="aoutput/house-out4.png" width="50%"></center></td>
+    <td><center><img src="aoutput/house-out5.png" width="50%"></center></td>
+</tr>
+<tr><td><center><img src="aoutput/jetplane.png" width="50%"></center></td>
+    <td><center><img src="aoutput/jetplane-out4.png" width="50%"></center></td>
+    <td><center><img src="aoutput/jetplane-out5.png" width="50%"></center></td>
+</tr>
+<tr><td><center><img src="aoutput/lake.png" width="50%"></center></td>
+    <td><center><img src="aoutput/lake-out4.png" width="50%"></center></td>
+    <td><center><img src="aoutput/lake-out5.png" width="50%"></center></td>
+</tr>
+<tr><td><center><img src="aoutput/lena_color_512.png" width="50%"></center></td>
+    <td><center><img src="aoutput/lena_color_512-out4.png" width="50%"></center></td>
+    <td><center><img src="aoutput/lena_color_512-out5.png" width="50%"></center></td>
+</tr>
+<tr><td><center><img src="aoutput/livingroom.png" width="50%"></center></td>
+    <td><center><img src="aoutput/livingroom-out4.png" width="50%"></center></td>
+    <td><center><img src="aoutput/livingroom-out5.png" width="50%"></center></td>
+</tr>
+<tr><td><center><img src="aoutput/mandril_color.png" width="50%"></center></td>
+    <td><center><img src="aoutput/mandril_color-out4.png" width="50%"></center></td>
+    <td><center><img src="aoutput/mandril_color-out5.png" width="50%"></center></td>
+</tr>
+<tr><td><center><img src="aoutput/peppers_color.png" width="50%"></center></td>
+    <td><center><img src="aoutput/peppers_color-out4.png" width="50%"></center></td>
+    <td><center><img src="aoutput/peppers_color-out5.png" width="50%"></center></td>
+</tr>
+<tr><td><center><img src="aoutput/pirate.png" width="50%"></center></td>
+    <td><center><img src="aoutput/pirate-out4.png" width="50%"></center></td>
+    <td><center><img src="aoutput/pirate-out5.png" width="50%"></center></td>
+</tr>
+<tr><td><center><img src="aoutput/walkbridge.png" width="50%"></center></td>
+    <td><center><img src="aoutput/walkbridge-out4.png" width="50%"></center></td>
+    <td><center><img src="aoutput/walkbridge-out5.png" width="50%"></center></td>
+</tr>
+</table>
+
+<hr>
+<h2> Discussion </h2>
+
 
 <hr>
 <h2> References </h2>

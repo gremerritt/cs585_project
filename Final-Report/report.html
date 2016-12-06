@@ -80,6 +80,38 @@ If n'&#62;n or m'&#62;m, we need to insert n-n' vertical seams or m-m' horizonta
  the seam with minimum energy and duplicating it for n-n' (or m-m') times, because this will duplicate the same seam over and over again and 
 produce artifacts. Therefore, we find n-n' (or m-m') seams whose energies are the smallest, and duplicate these seams.
 </p>
+<p>
+<h2> Histogram-Based Cropping Approach </h2>
+</p><p>
+In some instances, it may be necessary to crop the image instead of removing a seam. We used a histogram based approach to choose a central point and crop the image. A histogram is generated in the x and y dimensions of the energy of the image, and the intersection of the maximum bins of the x and y histograms results in the central point of the image. A crop region with the same aspect ratio of the output image is then placed centered around the centroid, and resampled to the desired size.
+</p>
+<p>
+Example 1: Shrinking the image
+</p><p>
+<table><tr><td><center>Original Image (640x312)</center></td><td><center>Centroid</center></td><td><center>Crop Rectangle</center></td><td><center>Output Image (150x300)</center></td></tr>
+<tr>
+    <td><center><img width="50%" src="aoutput/lighthouse.jpg"></center></td>
+    <td><center><img width="50%" src="aoutput/lighthouse_center.png"</center></td>
+    <td><center><img width="50%" src="aoutput/lighthouse_rect.png"</center></td>
+    <td><center><img width="50%" src="aoutput/lighthouse_out.jpg"</center></td>
+
+</tr>
+</table>
+</p>
+<p>
+Example 2: Enlarging the image
+</p><p>
+<table><tr><td><center>Original Image (512x512)</center></td><td><center>Centroid</center></td><td><center>Crop Rectangle</center></td><td><center>Output Image (600x300)</center></td></tr>
+<tr>
+    <td><center><img width="50%" src="aoutput/jetplane.png"></center></td>
+    <td><center><img width="50%" src="aoutput/jetplane_center.png"</center></td>
+    <td><center><img width="50%" src="aoutput/jetplane_rect.png"</center></td>
+    <td><center><img width="50%" src="aoutput/jetplane_out.png"</center></td>
+
+</tr>
+</table>
+</p>
+
 
 <hr>
 <h2> Input images and desired results </h2>
@@ -132,54 +164,106 @@ Example 2: Enlarging the image in one dimension and shrinking in the other dimen
 
 <hr>
 <h2> Results </h2>
-Several test images were ran through the tool using a fixed aspect ratio:
+Several test images were ran through the tool using the seam carving method:
 <br>
 <table>
-    <tr><td><center>Input Image (512x512)</center></td><td><center>Shrunk Image (400x400)</center></td><td><center>Enlarged Image (600x600)</center></td></tr>
+    <tr><td><center>Input Image (512x512)</center></td><td><center>Shrunk Image (400x400)</center></td><td><center>Enlarged Image (600x600)</center></td><td><center>Shrunk Image (382x256)</center></td></tr>
 <tr><td><center><img src="aoutput/cameraman.png" width="50%"></center></td>
     <td><center><img src="aoutput/cameraman-out4.png" width="50%"></center></td>
     <td><center><img src="aoutput/cameraman-out5.png" width="50%"></center></td>
+    <td><center><img src="aoutput/cameraman-out3.png" width="50%"></center></td>
 </tr>
 <tr><td><center><img src="aoutput/house.png" width="50%"></center></td>
     <td><center><img src="aoutput/house-out4.png" width="50%"></center></td>
     <td><center><img src="aoutput/house-out5.png" width="50%"></center></td>
+    <td><center><img src="aoutput/house-out3.png" width="50%"></center></td>
 </tr>
 <tr><td><center><img src="aoutput/jetplane.png" width="50%"></center></td>
     <td><center><img src="aoutput/jetplane-out4.png" width="50%"></center></td>
     <td><center><img src="aoutput/jetplane-out5.png" width="50%"></center></td>
+    <td><center><img src="aoutput/jetplane-out3.png" width="50%"></center></td>
 </tr>
 <tr><td><center><img src="aoutput/lake.png" width="50%"></center></td>
     <td><center><img src="aoutput/lake-out4.png" width="50%"></center></td>
     <td><center><img src="aoutput/lake-out5.png" width="50%"></center></td>
+    <td><center><img src="aoutput/lake-out3.png" width="50%"></center></td>
 </tr>
 <tr><td><center><img src="aoutput/lena_color_512.png" width="50%"></center></td>
     <td><center><img src="aoutput/lena_color_512-out4.png" width="50%"></center></td>
     <td><center><img src="aoutput/lena_color_512-out5.png" width="50%"></center></td>
+    <td><center><img src="aoutput/lena_color_512-out3.png" width="50%"></center></td>
 </tr>
 <tr><td><center><img src="aoutput/livingroom.png" width="50%"></center></td>
     <td><center><img src="aoutput/livingroom-out4.png" width="50%"></center></td>
     <td><center><img src="aoutput/livingroom-out5.png" width="50%"></center></td>
+    <td><center><img src="aoutput/livingroom-out3.png" width="50%"></center></td>
 </tr>
 <tr><td><center><img src="aoutput/mandril_color.png" width="50%"></center></td>
     <td><center><img src="aoutput/mandril_color-out4.png" width="50%"></center></td>
     <td><center><img src="aoutput/mandril_color-out5.png" width="50%"></center></td>
+    <td><center><img src="aoutput/mandril_color-out3.png" width="50%"></center></td>
 </tr>
 <tr><td><center><img src="aoutput/peppers_color.png" width="50%"></center></td>
     <td><center><img src="aoutput/peppers_color-out4.png" width="50%"></center></td>
     <td><center><img src="aoutput/peppers_color-out5.png" width="50%"></center></td>
+    <td><center><img src="aoutput/peppers_color-out3.png" width="50%"></center></td>
 </tr>
 <tr><td><center><img src="aoutput/pirate.png" width="50%"></center></td>
     <td><center><img src="aoutput/pirate-out4.png" width="50%"></center></td>
     <td><center><img src="aoutput/pirate-out5.png" width="50%"></center></td>
+    <td><center><img src="aoutput/pirate-out3.png" width="50%"></center></td>
 </tr>
 <tr><td><center><img src="aoutput/walkbridge.png" width="50%"></center></td>
     <td><center><img src="aoutput/walkbridge-out4.png" width="50%"></center></td>
     <td><center><img src="aoutput/walkbridge-out5.png" width="50%"></center></td>
+    <td><center><img src="aoutput/walkbridge-out3.png" width="50%"></center></td>
 </tr>
 </table>
+</p>
+<p>
+Example histogram-cropped output
+</p>
+<table>
+    <tr><td><center>Input Image (512x512)</center></td/><td><center>Output Image (200x400)</center></td/><td><center>Output Image (400x200)</center></td/></tr>
+    <tr><td><center><img src="aoutput/cameraman.png" width="50%"></center></td>
+        <td><center><img src="aoutput/cameraman_200x400_hist.png" width="50%"><br>Good</center></td>
+        <td><center><img src="aoutput/cameraman_400x200_hist.png" width="50%"><br>Bad</center></td>
+    </tr>
+    <tr><td><center><img src="aoutput/walkbridge.png" width="50%"></center></td>
+        <td><center><img src="aoutput/walkbridge_200x400_hist.png" width="50%"><br>Okay</center></td>
+        <td><center><img src="aoutput/walkbridge_400x200_hist.png" width="50%"><br>Good</center></td>
+    </tr>
+    <tr><td><center><img src="aoutput/jetplane.png" width="50%"></center></td>
+        <td><center><img src="aoutput/jetplane_200x400_hist.png" width="50%"><br>Okay</center></td>
+        <td><center><img src="aoutput/jetplane_400x200_hist.png" width="50%"><br>Good</center></td>
+    </tr>
+    <tr><td><center><img src="aoutput/livingroom.png" width="50%"></center></td>
+        <td><center><img src="aoutput/livingroom_200x400_hist.png" width="50%"><br>Bad</center></td>
+        <td><center><img src="aoutput/livingroom_400x200_hist.png" width="50%"><br>Bad</center></td>
+    </tr>
+    <tr><td><center><img src="aoutput/lena_color_512.png" width="50%"></center></td>
+        <td><center><img src="aoutput/lena_color_512_200x400_hist.png" width="50%"><br>Bad</center></td>
+        <td><center><img src="aoutput/lena_color_512_400x200_hist.png" width="50%"><br>Good</center></td>
+    </tr>
+
+</table>
+
+
 
 <hr>
 <h2> Discussion </h2>
+<p>
+Depending on the image and the desired output size, the two methods have varying levels of success. The seam carving images mainly worked on smaller changes in dimensions. The histogram cropped images worked well for drastic shifts in dimension with an image that contained an object similar in dimensions to the output dimension. The object of interest in the image also determine which method is best. If the detail in the image is spread across the whole frame, the seam carving method
+can keep more of the image. The histogram cropping method is best when there is only one object in the frame, since the centroid of the energy is the only part of the image that influcences the crop point. 
+</p>
+<p>
+
+</p>
+<hr><h2> Conclusions </h2>
+<p>
+Both methods showed moderate success in certain cropping situations; however, neither method was ultimately successful on a wide variety of images or output aspect ratios. Further work could be to develop a detection system to choose an optimal method of detection. In addition, a combination of the two methods could be developed to utilize the fine shaping of the seam carving with the optimal resizing of the histogram cropping method.
+</p>
+
 
 
 <hr>

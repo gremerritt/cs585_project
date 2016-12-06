@@ -83,7 +83,8 @@ produce artifacts. Therefore, we find n-n' (or m-m') seams whose energies are th
 <p>
 <h2> Histogram-Based Cropping Approach </h2>
 </p><p>
-In some instances, it may be necessary to crop the image instead of removing a seam. We used a histogram based approach to choose a central point and crop the image. A histogram is generated in the x and y dimensions of the energy of the image, and the intersection of the maximum bins of the x and y histograms results in the central point of the image. A crop region with the same aspect ratio of the output image is then placed centered around the centroid, and resampled to the desired size.
+In some instances, it may be necessary to crop the image instead of removing a seam. We used a histogram based approach to choose a central point and crop the image. A histogram is generated in the x and y dimensions of the energy of the image, and the intersection of the maximum bins of the x and y histograms results in the central point of the image. A crop region with the same aspect ratio of the output image is then placed centered around the centroid, and resampled to the desired
+size. Histograms of 15 bins were used to generate the output images.
 </p>
 <p>
 Example 1: Shrinking the image

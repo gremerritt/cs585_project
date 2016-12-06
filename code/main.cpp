@@ -11,7 +11,7 @@
 #include <unistd.h>
 
 #define IMAGE_NAME "tree.jpg"
-#define DEBUG 1
+#define DEBUG 0
 #define RED Scalar(0,0,255)
 
 using namespace cv;
@@ -32,10 +32,15 @@ int getMinVal(vector<int> &vals);
 int getMinIndex(vector<int> &vals);
 int main(int argc,char* argv[])
 {
-	if (argc != 5){
-		cout << "Usage: " << argv[0] << " [inputImage] [outputImage] [desiredWidth] [desiredHeight]" << endl;
+    string method;
+	if (argc < 5){
+		cout << "Usage: " << argv[0] << " [inputImage] [outputImage] [desiredWidth] [desiredHeight] [seam|histogram]" << endl;
 		return 0;
 	}
+    if (argc < 6)
+        method = "seam";
+    else
+        method = argv[5];
 
 	//Mat img = imread(IMAGE_NAME, IMREAD_COLOR);
 	Mat img = imread(argv[1], IMREAD_COLOR);
@@ -51,8 +56,14 @@ int main(int argc,char* argv[])
 
 	Mat output;
 	//process(img,stoi(argv[3]),stoi(argv[4]));
-	// ContentAwareResizing(img, output, stoi(argv[3]), stoi(argv[4]));
-	resizeByHistogram(img, output, stoi(argv[3]), stoi(argv[4]));
+    
+    if (method.compare("seam") == 0)
+        ContentAwareResizing(img, output, stoi(argv[3]), stoi(argv[4]));
+    else if (method.compare("histogram") == 0)
+        resizeByHistogram(img, output, stoi(argv[3]), stoi(argv[4]));
+    else {
+        cout << "Method must be either 'seam' or 'histogram'" << endl;
+    }
 	imshow("Image",img);
 	imshow("Finished Image", output);
 	imwrite(argv[2], output);

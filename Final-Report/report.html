@@ -19,7 +19,7 @@
 <body bgcolor="#ffffff">
 <!-- The <body> tag lets the browser know that we are beginning the body of the web page.  The bgcolor option sets the background color to the web page -->
 
-   <h1>Project Page for CS585 - Computer Vision</h1>
+   <h1>CS585 Project Final Report - Content-aware Image Resizing</h1>
    <!-- The <h1> tag sets the text to a Heading 1 style.  This is the largest and boldest of all the various heading styles. -->
 
    <p>Team Members:
@@ -31,13 +31,17 @@
 <hr>
 <h2> Problem Definition </h2>
 <p>
-Given an image of size n&#215;m in pixels, resize the image into an image of size n'&#215;m' while preserving the visual coherence.
+Given an image of size n&#215;m in pixels, resize the image into an image of size n'&#215;m'.
+</p><p>
+Often, images need to be resized to properly fit on a display. Resizing of the image by resampling can lead to objects of interest
+ losing focus to background. Content-aware image resizing aims to preserve visual coherence while resizing. In this project, our goal is 
+to develop an algorithm to shrink or enlarge an image with content-aware image resizing.
 </p>
 
 <hr>
-<h2> Algorithm </h2>
+<h2> Seam Carving Approach </h2>
 <p>
-In this project, we are going to use the seam carving algorithm for content-aware image resizing proposed by Avidan et al.[1] .
+The seam carving algorithm for content-aware image resizing is proposed by Avidan et al.[1] .
 </p><p>
 <b>1. Definition of a seam</b>
 </p><p>
@@ -51,20 +55,27 @@ An example of a horizontal seam and a vertical seam is shown below:<br>
 <b>2. Finding the seam with minimum energy</b>
 </p><p>
 There are many ways to define the energy of pixels in an image. One way is to use the l<sub>1</sub>-norm of the gradient:<br>
-<center><img src="energy.png" height="45"></center><br>
-The energy of a seam is defined as the sum of the energy of all pixels that belong to the seam. To shrink the size of the image, we need to 
+<center><img src="energy.png" height="50"></center><br>
+The energy of a seam is defined as the sum of the energy of all pixels that belong to the seam. <br>
+<center><img src="energy_seam.png" height="100"></center><br>
+A seam with high energy often contains a lot of variation, which means it is rich in information. A seam with low energy contains little 
+information and we are less interested in it.<br>
+<br>
+To shrink the size of the image, we need to 
 remove the horizontal or vertical seam with the smallest energy. The optimal seam can be found with dynamic programming. Define M(i, j)
 as the minimum energy of all horizontal (or vertical) seams that end at pixel (i, j). Then
 </p><p>
-<center>M(i, j)=e<sub>1</sub>(i, j)+min{M(i-1, j-1),M(i-1, j),M(i-1, j+1)}(horizontal)</center>
-<center>or M(i, j)=e<sub>1</sub>(i, j)+min{M(i-1, j-1),M(i, j-1),M(i+1, j-1)}(vertical).</center>
+<center>M(i, j)=e(i, j)+min{M(i-1, j-1),M(i-1, j),M(i-1, j+1)}(horizontal)</center>
+<center>or M(i, j)=e(i, j)+min{M(i-1, j-1),M(i, j-1),M(i+1, j-1)}(vertical).</center>
 </p><p>
 The minimum value of the last column (or row) is the minimum energy of all the horizontal (or vertical) seams. We can then backtrack
 from the minimum entry to find the optimal seam.
 </p><p>
 <b>3. Image shrinking</b>
 </p><p>
-If n'&#60;n and m'&#60;m, we need to remove n-n' vertical seams and m-m' horizontal seams. The vertical seams are removed first until the image gets to the desired size.
+If n'&#60;n and m'&#60;m, we need to remove n-n' vertical seams and m-m' horizontal seams. We repeat the process of finding the optimal
+seam and deleting it for n-n' (or m-m') times. The horizontal seams are removed first until the image gets to the desired height, and
+then the vertical seams are removed first until the image gets to the desired width.
 
 <!-- There are four ways of choosing the order of removing:
 </p><p>
@@ -254,8 +265,12 @@ Example histogram-cropped output
 <hr>
 <h2> Discussion </h2>
 <p>
-Depending on the image and the desired output size, the two methods have varying levels of success. The seam carving images mainly worked on smaller changes in dimensions. The histogram cropped images worked well for drastic shifts in dimension with an image that contained an object similar in dimensions to the output dimension. The object of interest in the image also determine which method is best. If the detail in the image is spread across the whole frame, the seam carving method
-can keep more of the image. The histogram cropping method is best when there is only one object in the frame, since the centroid of the energy is the only part of the image that influcences the crop point. 
+Depending on the image and the desired output size, the two methods have varying levels of success. The seam carving images 
+mainly worked on smaller changes in dimensions. The histogram cropped images worked well for drastic shifts in dimension with 
+an image that contained an object similar in dimensions to the output dimension. The object of interest in the image also 
+determines which method is better. If the detail in the image is spread across the whole frame, the seam carving method
+can keep more of the image. The histogram cropping method is best when there is only one object in the frame, since the 
+centroid of the energy is the only part of the image that influcences the crop point. 
 </p>
 <p>
 
